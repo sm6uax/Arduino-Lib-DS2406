@@ -219,14 +219,18 @@ int8_T DS2406::getPioInputs(void)
     u8Buffer[4] = u8Bits;
 
     // Calculate Crc
-    u16CrcCalcul = bus->crc16(u8Buffer, 5);
-    u16CrcCalcul = ~u16CrcCalcul;
+	uint8_t u16CrcLow = ~bus->read();
+	uint8_t u16CrcHigh = ~bus->read();
 
-    // Crc comparison checking
-    if(u16CrcCalcul != u16Crc)
-    {
-        return cDs2406WrongCrc;
-    }
+	// Calculate Crc
+	u16CrcCalcul = bus->crc16(u8Buffer, 5);
+	uint8_t *crcBytes = (uint8_t *)&u16CrcCalcul;
+
+	// Crc comparison checking
+	if(!(crcBytes[0] == u16CrcLow && crcBytes[1] == u16CrcHigh))
+	{
+		return cDs2406WrongCrc;
+	}
 
     // Check that the 4 reading are identical, else escape
     if((((u8Bits & 0xAA) != 0xAA) && ((u8Bits & 0xAA) != 0x00)) ||
