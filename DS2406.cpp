@@ -5,16 +5,12 @@
  *...........................................................................*
  * Description : Duration .. ms max                                          *
  *****************************************************************************/
-DS2406::DS2406(OneWire *b, uint8_t *addr) 
+DS2406::DS2406(OneWire *b) 
 {
     // Store one wire bus
     bus = b;
 
-    // Store DS2406 address
-    for(int i = 0; i<8; i++) 
-    {
-        address[i] = addr[i];
-    }
+
 
     // Init outputs to "not activated"
     bPioAMemo = false;
@@ -26,11 +22,11 @@ DS2406::DS2406(OneWire *b, uint8_t *addr)
  *...........................................................................*
  * Description : Duration 13 ms max                                          *
  *****************************************************************************/
-void DS2406::init(void)
+void DS2406::init(uint8_t address[8])
 {
     // Deactivate transistor of the 2 outputs
     // PioA and B can be used as input
-    setPioOutputs(false, false);
+    setPioOutputs(address,false, false);
 }
 
 /*****************************************************************************
@@ -38,12 +34,12 @@ void DS2406::init(void)
  *...........................................................................*
  * Description : Duration 12 ms max                                          *
  *****************************************************************************/
-int8_T DS2406::setPioAOutput(bool bPioAState)
+int8_T DS2406::setPioAOutput(uint8_t address[8],bool bPioAState)
 {
     int8_T s8Result;
 
     // Affect PioA output by conserving PioB status
-    s8Result = setPioOutputs(bPioAState, bPioBMemo);
+    s8Result = setPioOutputs(address,bPioAState, bPioBMemo);
 
     // Check Pio status
     if(s8Result > 0)
@@ -58,12 +54,12 @@ int8_T DS2406::setPioAOutput(bool bPioAState)
  *...........................................................................*
  * Description : Duration 12 ms max                                          *
  *****************************************************************************/
-int8_T DS2406::setPioBOutput(bool bPioBState)
+int8_T DS2406::setPioBOutput(uint8_t address[8],bool bPioBState)
 {
     int8_T s8Result;
 
     // Affect PioB output by conserving PioA status
-    s8Result = setPioOutputs(bPioAMemo, bPioBState);
+    s8Result = setPioOutputs(address,bPioAMemo, bPioBState);
 
     // Check Pio status
     if(s8Result > 0)
@@ -78,7 +74,7 @@ int8_T DS2406::setPioBOutput(bool bPioBState)
  *...........................................................................*
  * Description : Duration 12 ms max                                          *
  *****************************************************************************/
-int8_T DS2406::setPioOutputs(bool bPioAState, bool bPioBState)
+int8_T DS2406::setPioOutputs(uint8_t address[8],bool bPioAState, bool bPioBState)
 {
     uint8_t   u8State;
     uint8_t   u8Buffer[4];
@@ -140,12 +136,12 @@ int8_T DS2406::setPioOutputs(bool bPioAState, bool bPioBState)
  *...........................................................................*
  * Description : Duration 11 ms max                                          *
  *****************************************************************************/
-int8_T DS2406::getPioAInput(void)
+int8_T DS2406::getPioAInput(uint8_t address[8])
 {
     int8_T s8Result;
 
     // Request Pios Inputs
-    s8Result = getPioInputs();
+    s8Result = getPioInputs(address);
 
     // Check Pio status
     if(s8Result > 0)
@@ -160,12 +156,12 @@ int8_T DS2406::getPioAInput(void)
  *...........................................................................*
  * Description : Duration 11 ms max                                          *
  *****************************************************************************/
-int8_T DS2406::getPioBInput(void)
+int8_T DS2406::getPioBInput(uint8_t address[8])
 {
     int8_T s8Result;
 
     // Request Pios Inputs
-    s8Result = getPioInputs();
+    s8Result = getPioInputs(address);
 
     // Check Pio status
     if(s8Result > 0)
@@ -180,7 +176,7 @@ int8_T DS2406::getPioBInput(void)
  *...........................................................................*
  * Description : Duration 11 ms max                                          *
  *****************************************************************************/
-int8_T DS2406::getPioInputs(void)
+int8_T DS2406::getPioInputs(uint8_t address[8])
 {
     unsigned char u8InfoByte;
     unsigned char u8Bits;
@@ -202,8 +198,9 @@ int8_T DS2406::getPioInputs(void)
     u8Bits = bus->read();
 
     // Read Crc
-    u16Crc = bus->read();
-    u16Crc |= ((unsigned int)(bus->read())) << 8;
+    // Calculate Crc
+	uint8_t u16CrcLow = ~bus->read();
+	uint8_t u16CrcHigh = ~bus->read();
 
     // Check if communication is ok
     if((u8InfoByte == 0xFF) && (u8Bits == 0xFF) &&  (u16Crc == 0xFFFF))
@@ -218,9 +215,7 @@ int8_T DS2406::getPioInputs(void)
     u8Buffer[3] = u8InfoByte;
     u8Buffer[4] = u8Bits;
 
-    // Calculate Crc
-	uint8_t u16CrcLow = ~bus->read();
-	uint8_t u16CrcHigh = ~bus->read();
+
 
 	// Calculate Crc
 	u16CrcCalcul = bus->crc16(u8Buffer, 5);
@@ -252,7 +247,7 @@ int8_T DS2406::getPioInputs(void)
  *...........................................................................*
  * Description : Duration .. ms max                                          *
  *****************************************************************************/
-void DS2406::readStatus(uint8_t *buffer) 
+void DS2406::readStatus(uint8_t address[8],uint8_t *buffer) 
 {
     // Launch read status
     bus->reset();

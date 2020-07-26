@@ -33,29 +33,28 @@ class DS2406 {
 
     // Construct the OneWireSwitch with the given OneWire bus and address.
     // addr must be 8 bytes.
-    DS2406(OneWire *b, uint8_t *addr);
+    DS2406(OneWire *b);
 
     // Deactivate the both io
-    void init(void);
+    void init(uint8_t address[8]);
 
     // Functions to get the state of the ios
-    int8_T getPioAInput(void);
-    int8_T getPioBInput(void);
-    int8_T getPioInputs(void);
+    int8_T getPioAInput(uint8_t address[8]);
+    int8_T getPioBInput(uint8_t address[8]);
+    int8_T getPioInputs(uint8_t address[8]);
 
     // Functions to set the state of the ios
-    int8_T setPioAOutput(bool bPioAState);
-    int8_T setPioBOutput(bool bPioBState);
-    int8_T setPioOutputs(bool bPioAState, bool bPioBState);
+    int8_T setPioAOutput(uint8_t address[8],bool bPioAState);
+    int8_T setPioBOutput(uint8_t address[8],bool bPioBState);
+    int8_T setPioOutputs(uint8_t address[8],bool bPioAState, bool bPioBState);
 
  private:
     OneWire *bus;
-    uint8_t address[8];
 
     // Flags to store the old state of ouputs
     bool bPioAMemo;
     bool bPioBMemo;
 
     // Read the status
-    void readStatus(uint8_t *buffer);
+    void readStatus(uint8_t address[8],uint8_t *buffer);
 };
